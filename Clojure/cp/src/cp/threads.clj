@@ -1,4 +1,4 @@
-(ns threads.core)
+(ns cp.threads)
 
 (def d (delay 
 	(println "Running ...")
@@ -69,6 +69,63 @@
 (time (dorun (pmap phone-numbers files)))
 
 ;bad use of pmap
+
+(def files (repeat 100000
+	(apply str (concat (repeat 1000 \space) "sunil: 617.555.2937, Betty: 508.555.2218"))))
+
+(time (->> files
+	(partition-all 250)
+	(pmap (fn [chunk] (doall (map phone-numbers chunk))))
+	(apply concat)
+	dorun))
+
+(def sarah {:name "Sarah" :age 25 :wears-glasses? false})
+
+;reference types: var ref agent atom
+
+@(atom 12)
+
+(agent {:c 42})
+
+(map deref [(agent {:c 42}) (atom 12) (ref "http/clojure.org") (var +)])
+
+(comment
+	Key clojure concepts:
+
+	coordination: 
+		coordinated: cooperation of multiple actors to not get in each others way
+		uncoordinated: multiple actors are unable to impact each other negatively.
+
+	synchronization:
+		synchronous: caller thread blocks until access is obtained
+		asynchronous: can start or stop without blocking intiating thread
+
+				 | coordinated 	| uncoordinated
+	-------------------------------------------
+	synchronous  | refs 		| atoms
+	asynchronous | 				| agents
+
+	vars are for local threads, thus don't concern with above
+
+	)
+
+(defmacro futures [n & exprs]
+	(vec (for [_ (range n)
+		       expr exprs]
+		       `(future ~expr))))
+
+(defmacro wait-futures [& args]
+	`(doseq [f# (futures ~@args)]
+		@f#))
+
+(comment
+	ATOMS:
+
+	
+	)
+
+
+
 
 
 

@@ -119,10 +119,38 @@
 		@f#))
 
 (comment
-	ATOMS:
+	atom 
+		synchronous, uncoordinated, atomic compare-and-set
+		when modifiying state, block until mod is complete
+		each modification is isolated
+		this is atomic, if atom value changed between get and update, it retrys with new value
 
-	
+		swap! - modify state
+		update-in - ?
 	)
+
+(def sarah (atom {:name "Sarah" :age 25 :wears-glasses false}))
+
+(swap! sarah update-in [:age] + 3)
+
+(swap! sarah (comp #(update-in % [:age] inc)
+				   #(assoc % :wears-glasses true)))
+
+(def xs (atom #{1 2 3}))
+
+(wait-futures 1 (swap! xs (fn [v]
+							(Thread/sleep 250)
+							(println "trying 4")
+							(conj v 4)))
+				(swap! xs (fn [v]
+							(Thread/sleep 500)
+							(println "trying 5")
+							(conj v 5))))
+
+(def x (atom 2000))
+
+(swap! x #(Thread/sleep %))
+
 
 
 

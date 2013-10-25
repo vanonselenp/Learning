@@ -126,6 +126,8 @@
 		this is atomic, if atom value changed between get and update, it retrys with new value
 
 		swap! - modify state
+		compare-and-set! - modifies state only if current val = old val
+		reset! - sets state without regard to current state
 		update-in - ?
 	)
 
@@ -151,7 +153,86 @@
 
 (swap! x #(Thread/sleep %))
 
+(compare-and-set! xs :wrong "new value")
 
+(compare-and-set! xs @xs "new value")
+
+(def ys (atom 2000))
+
+(reset! ys :y)
+
+(comment
+	Common between all reference types:
+
+	deref - to dereference something (@)
+
+	WATCHES:
+		functions that observe changes in state
+	add-watch - add a function to a reference that will be executed each time it is changed.
+				takes [key source old new]
+	remove-watch -
+	identity - 
+
+	VALIDATORS:
+		to constrain a reference's state however you like
+	:validator - add this option when creating an atom, ref, agent
+	set-validator!
+	)
+
+;---------------------------------------------------
+; Watches
+;---------------------------------------------------
+(defn echo-watch [key identity old new]
+	(println key old "=>" new))
+
+(def sarah (atom {:name "Sarah" :age 25}))
+
+(add-watch sarah :echo echo-watch)
+
+(swap! sarah update-in [:age] inc)
+
+(add-watch sarah :echo2 echo-watch)
+
+(remove-watch sarah :echo2)
+
+(def history (atom ()))
+
+(defn log->list [dest-atom key source old new]
+	(when (not= old new)
+		(swap! dest-atom conj new)))
+
+(def sarah (atom {:name "Sarah", :age 25}))
+
+(add-watch sarah :record (partial log->list history))
+
+(swap! sarah update-in [:age] inc)
+
+(swap! sarah assoc :wears-glasses? true)
+
+(pprint @history)
+
+;---------------------------------------------------
+; Validators
+;---------------------------------------------------
+
+(def n (atom 1 :validator pos?))
+
+(swap! n + 500)
+(swap! n - 1000)
+
+(def sarah (atom {:name "Sarah" :age 25}))
+
+(set-validator! sarah :age)
+
+(swap! sarah dissoc :age)
+
+(set-validator! sarah #(or (:age %)
+						   (throw (IllegalStateException. "People must have `:age`s!"))))
+
+(comment 
+	REFS:
+		
+	)
 
 
 

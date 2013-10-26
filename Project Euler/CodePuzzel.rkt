@@ -2,7 +2,7 @@
 
 ;Peter van Onselen
 
-(define (amazon-challenge lst)
+(define (code-challenge lst)
   (define result (create-dict-with-luckyCount-and-string lst))
   (cond ((empty? result) '())
         ((= (length result) 1) (cdar result))
@@ -47,8 +47,8 @@
 
 ;runs the code with test data
 ;---------------------------------------------------------
-(amazon-challenge nothing)
-(amazon-challenge one-entry)
-(amazon-challenge two-entries)
-(amazon-challenge test-data)
-(amazon-challenge more-data)
+(code-challenge nothing)
+(code-challenge one-entry)
+(code-challenge two-entries)
+(code-challenge test-data)
+(code-challenge more-data)

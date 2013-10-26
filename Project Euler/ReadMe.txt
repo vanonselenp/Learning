@@ -7,7 +7,7 @@ I have provided:
 * A very quick and concise reference guide: 
 	- http://learnxinyminutes.com/docs/racket/
 
-Once installed, open "AmazonCodePuzzle.rkt" in DrRacket, and click Run.
+Once installed, open "CodePuzzel.rkt" in DrRacket, and click Run.
 
 I have provided some test data in the file.
 

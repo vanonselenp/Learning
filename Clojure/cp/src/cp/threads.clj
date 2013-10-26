@@ -229,12 +229,22 @@
 (set-validator! sarah #(or (:age %)
 						   (throw (IllegalStateException. "People must have `:age`s!"))))
 
+;---------------------------------------------------
+; Refs
+;---------------------------------------------------
+
 (comment 
 	REFS:
 		synchronous, coordinated, STM
 		atomic, consistent, isolated.
+
 	)
 
+(defn character [name & {:as opts}]
+	(ref (merge {:name name :items #{} :health 500}) 
+				opts))
+
+(def smaug (character "Smaug" :health 600))
 
 
 

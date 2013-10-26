@@ -237,14 +237,178 @@
 	REFS:
 		synchronous, coordinated, STM
 		atomic, consistent, isolated.
+		any modification to a ref must happen in a transaction
+		in transaction value? 
 
+	dosync - the scope of a transaction
+	alter - if all starting vals are the same when trying to commit then commit else restart
+	commute -  
+	ref-set - similar to alter, with no regard for contraints, used to reinitilize values
 	)
 
 (defn character [name & {:as opts}]
-	(ref (merge {:name name :items #{} :health 500}) 
-				opts))
+	(ref (merge {:name name :items #{} :health 500}
+				opts)))
 
-(def smaug (character "Smaug" :health 600))
+(def smaug (character "Smaug" :health 500 :strength 400 :items (set (range 50))))
+(def bilbo (character "Bilbo" :health 100 :strength 100))
+(def gandalf (character "Gandalf" :health 75 :mana 750))
+
+(defn loot [from to]
+	(dosync 
+		(when-let [item (first (:items @from))]
+			(alter to update-in [:items] conj item)
+			(alter from update-in [:items] disj item))))
+
+(wait-futures 1
+	(while (loot smaug bilbo))
+	(while (loot smaug gandalf)))
+
+(count (:items @bilbo))
+
+(map (comp count :items deref) [bilbo gandalf])
+(filter (:items @bilbo) (:items @gandalf))
+
+(= (/ (/ 120 3) 4) (/ (/ 120 4) 3))
+(= ((comp #(/ % 3) #(/ % 4)) 120) ((comp #(/ % 4) #(/ % 3)) 120))
+
+(def x (ref 0))
+
+(time (wait-futures 5
+	(dotimes [_ 1000]
+		(dosync (alter x + (apply + (range 1000)))))
+	(dotimes [_ 1000]
+		(dosync (alter x - (apply + (range 1000)))))))
+
+(time (wait-futures 5
+	(dotimes [_ 1000]
+		(dosync (commute x + (apply + (range 1000)))))
+	(dotimes [_ 1000]
+		(dosync (commute x - (apply + (range 1000)))))))
+
+(defn flawed-loot [from to]
+	(dosync
+		(when-let [item (first (:items @from))]
+			(commute to update-in [:items] conj item)
+			(commute from update-in [:items] disj item))))
+
+(wait-futures 1 
+	(while (flawed-loot smaug bilbo))
+	(while (flawed-loot smaug gandalf)))
+
+(defn fixed-loot [from to]
+	(dosync
+		(when-let [item (first (:items @from))]
+			(commute to update-in [:items] conj item)
+			(alter from update-in [:items] disj item))))
+
+(wait-futures 1 
+	(while (fixed-loot smaug bilbo))
+	(while (fixed-loot smaug gandalf)))
+
+(defn attack [agressor target]
+	(dosync
+		(let [damage (* (rand 0.1) (:strength @agressor))]
+			(commute target update-in [:health] #(max 0 (- % damage))))))
+
+(defn heal [healer target]
+	(dosync 
+		(let [aid (* (rand 0.1) (:mana @healer))]
+			(when (pos? aid)
+				(commute healer update-in [:mana] -  (max 5 (/ aid 5)))
+				(commute target update-in [:health] + aid)))))
+
+(def alive? (comp pos? :health))
+
+(defn play [character action other]
+	(while (and 
+		(alive? @character)
+		(alive? @other)
+		(action character other))
+	(Thread/sleep (rand-int 50))))
+
+(wait-futures 1
+	(play bilbo attack smaug)
+	(play smaug attack bilbo))
+
+(map (comp :health deref) [smaug bilbo])
+
+(defn reset-health []
+	(dosync
+		(alter smaug assoc :health 500)
+		(alter bilbo assoc :health 100)))
+
+(wait-futures 1
+	(play bilbo attack smaug)
+	(play smaug attack bilbo)
+	(play gandalf heal bilbo))
+
+(map (comp #(select-keys % [:name :health :mana]) deref) 
+	[smaug bilbo gandalf])
+
+(dosync (ref-set bilbo {:name "Mr Jones"}))
+
+(defn enfore-max-health [name health]
+	(fn [character-data]
+		(or (<= (:health character-data) health)
+			(throw (IllegalStateException. (str name " is already at max health!"))))))
+
+(defn character [name & {:as opts}]
+	(let [cdata 
+			(merge 
+				{:name name :items #{} :health 500}
+				opts)
+		  cdata (assoc cdata :max-health (:health cdata))
+		  validators (list* (enfore-max-health name (:health cdata))
+		  					(:validators cdata))]
+		  (ref (dissoc cdata :validators)
+		  	:validator #(every? (fn [v] (v %)) validators))))
+
+(def smaug (character "Smaug" :health 500 :strength 400 :items (set (range 50))))
+(def bilbo (character "Bilbo" :health 100 :strength 100))
+(def gandalf (character "Gandalf" :health 75 :mana 750))
+
+(dosync (alter bilbo assoc-in [:health] 95))
+
+(defn heal [healer target]
+	(dosync
+		(let [aid (min (* (rand 0.1) (:mana @healer))
+					   (- (:max-health @target) (:health @target)))]
+		(when (pos? aid)
+			(commute healer update-in [:mana] - (max 5 (/ aid 5)))
+			(alter target update-in [:health] + aid)))))
+
+(defn unsafe []
+	(io! (println "writing to database ...")))
+
+(def x (ref (java.util.ArrayList.)))
+
+(wait-futures 2 
+	(dosync 
+		(dotimes [v 5]
+			(Thread/sleep (rand-int 50))
+			(alter x #(doto % (.add v))))))
+
+(def x (ref 0))
+
+(dosync 
+	@(future (dosync (ref-set x 0)))
+	(ref-set x 1))
+
+(def a (ref 0 :min-history 50 :max-history 100))
+
+(future (dotimes [_ 500] (dosync 
+	(Thread/sleep 20)
+	(alter a inc))))
+
+@(future (dosync (Thread/sleep 1000) @a))
+
+(ref-history-count a)
+
+(comment
+	VARS:
+		
+	)
 
 
 

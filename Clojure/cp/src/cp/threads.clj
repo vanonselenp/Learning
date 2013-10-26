@@ -231,7 +231,8 @@
 
 (comment 
 	REFS:
-		
+		synchronous, coordinated, STM
+		atomic, consistent, isolated.
 	)
 
 

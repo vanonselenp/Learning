@@ -1,5 +1,0 @@
-#lang racket
-
-(require racket/date)
-
-(date-week-day (seconds->date (find-seconds 0 0 0 2 8 2013 #t)))

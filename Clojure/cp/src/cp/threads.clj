@@ -407,8 +407,115 @@
 
 (comment
 	VARS:
+		def - define vars
+		defn- - private function
+
+	local thread bound 
+	can be made to pass thread bounds in certain cases (futures, pmap, etc)
+	root scoped. do not treat as var in c#
+	rebinding a def in a function rebinds it at the root. 
+	)
+
+(def ^:private everything 42)
+(def ^{:private true} everything 42)
+
+(def a 
+	"a sample value"
+	5)
+
+(meta #'a)
+
+(def ^{:doc "metadata about this object"} a 5)
+(alter-meta! #'a assoc :doc "modified")
+
+(def ^:const everything 42)
+
+(def ^:const max-value 255)
+
+(defn valid-value [v]
+	(<= v max-value))
+
+(def max-value 500)
+
+(let [a 1
+	  b 2]
+	  (println (+ a b))
+	  (let [b 3
+	  	    + -]
+  	    	(println (+ a b)))
+	  (println (+ a b)))
+
+(def ^:dynamic *max-value* 255)
+
+(defn valid-value? [v]
+	(<= v *max-value*))
+
+(binding [*max-value* 500]
+	(valid-value? 299))
+
+(def ^:dynamic *var* :root)
+
+(defn get-*var* [] *var*)
+
+(binding [*var* :a]
+	(binding [*var* :b]
+		(binding [*var* :c]
+			(get-*var*))))
+
+(defn http-get [url-string]
+	(let [conn (-> url-string java.net.URL. .openConnection)
+		  response-code (.getResponseCode conn)]
+		  (if (== 404 response-code)
+		  	[response-code]
+		  	[response-code (-> conn .getInputStream slurp)])))
+
+(def ^:dynamic *response-code* nil)
+
+(defn http-get [url-string]
+	(let [conn (-> url-string java.net.URL. .openConnection)
+		  response-code (.getResponseCode conn)]
+		  (when (thread-bound? #'*response-code*)
+		  	(set! *response-code* response-code))
+		  (when (not= 404 response-code)
+		  	(-> conn .getInputStream slurp))))
+
+(http-get "http://google.com/")
+(binding [*response-code* nil]
+	(let [content (http-get "http://google.com/badurl")]
+		(println "Response Code was:" *response-code*)))
+
+(binding [*max-value* 500]
+	(println (valid-value? 299))
+	@(future (valid-value? 299)))
+
+;defs are root level objects !!!
+
+(def x 80)
+
+(defn never-do-this []
+	(def x 123)
+	(def y 456)
+	(def x (+ x y))
+	x)
+
+(defn rather? []
+	(let [x 123
+		  y 456]
+		  (+ x y)))
+
+(def x 0)
+
+(alter-var-root #'x inc)
+
+(def j)
+(declare complex-helper-fn other-helper-fn)
+
+(comment
+	AGENTS:
+		uncoordinated, asynchronous
 		
 	)
+
 
 
 

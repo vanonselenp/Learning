@@ -510,12 +510,127 @@
 (def j)
 (declare complex-helper-fn other-helper-fn)
 
-(comment
+(comment 
 	AGENTS:
 		uncoordinated, asynchronous
-		
+		all changes are made away from the thread that schedules them
+
+		unique characteristics
+		* may be used with side effecting functions
+		* STM aware
+
+	both of the below add actions to a queue to be processed:
+		send - eval in fixed-size thread pool (doesn't exceed parallization of current hardware)
+		   	NB: don't use for IO or blocking operations
+		send-off - eval in unbound thread pool (same as futures) 
+
+	NB Agents are unrelated to the threads use to make them work
 	)
 
+(def a (agent 500))
+
+(send a range 1000)
+
+(def a (agent 5000))
+(def b (agent 10000))
+
+(send-off a #(Thread/sleep %))
+
+(send-off b #(Thread/sleep %))
+
+(await a b)
+
+(def a (agent nil))
+
+(send a (fn [_] (throw (Exception. "something went wrong"))))
+(send a identity)
+
+(restart-agent a 42)
+
+(send a inc)
+
+(reduce send a (for [x (range 3)]
+	(fn [_] (throw (Exception. (str "error #" x))))))
+
+(restart-agent a 42)
+
+(agent-error a)
+
+(restart-agent a 42 :clear-actions true)
+
+(def a (agent nil
+	:error-mode :continue
+	:error-handler (fn [the-agent exception]
+		(.println System/out (.getMessage exception)))))
+
+(set-error-handler! a (fn [the-agent exception]
+	(when (= "FATAL" (.getMessage exception))
+		(set-error-mode! the-agent :fail))))
+
+(send a (fn [_] (throw (Exception. "FATAL"))))
+(send a identity)
+
+;-------------------------------------------
+; an overview of why agents with stm are awesome ...?
+
+(require '[clojure.java.io :as io])
+
+(def console (agent *out*))
+
+(def character-log (agent (io/writer "~/Development/Learning/Clojure/cp/character-states.log" :append true)))
+
+(defn write
+	[^java.io.Writer w & content]
+	(doseq [x (interpose " " content)]
+		(.write w (str x)))
+	(doto w
+		(.write "\n")
+		.flush))
+
+(defn log-reference
+	[reference & writer-agents]
+	(add-watch reference :log
+		(fn [_ reference old new]
+			(doseq [writer-agent writer-agents]
+				(send-off writer-agent write new)))))
+
+(def smaug (character "Smaug" :health 500 :strength 400 :items (set (range 50))))
+(def bilbo (character "Bilbo" :health 100 :strength 100))
+(def gandalf (character "Gandalf" :health 75 :mana 750))
+
+(log-reference bilbo console character-log)
+(log-reference smaug console character-log)
+
+(wait-futures 1
+	(play bilbo attack smaug)
+	(play smaug attack bilbo)
+	(play gandalf heal bilbo))
+
+(defn attack [aggressor target]
+	(dosync
+		(let [damage (* (rand 0.1) (:strength @aggressor))]
+			(send-off console write (:name @aggressor) "hits" (:name @target) "for" damage)
+			(commute target update-in [:health] #(max 0 (- % damage))))))
+
+(defn heal [healer target]
+	(dosync
+		(let [aid (min (* (rand 0.1) (:mana @healer))
+			           (- (:max-health @target) (:health @target)))]
+		(when (pos? aid)
+			(send-off console write (:name @healer) "heals" (:name @target) "for" aid)
+			(commute healer update-in [:mana] - (max 5 (/ aid 5)))
+			(alter target update-in [:health] + aid)))))
+
+(dosync
+	(alter smaug assoc :health 500)
+	(alter bilbo assoc :health 100))
+
+;more agent fun ... 
+
+;the moment they went non standard they lost me. 
+;especially since they havent covered exactly how to make the plugins work
+;lein would have been an awesome explanation at this point.
+(require '[net.cgrand.enlive-html :as enlive])
 
 
 

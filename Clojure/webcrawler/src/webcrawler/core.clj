@@ -26,3 +26,8 @@
 			(remove (partial re-matches #"\d+"))
 			(map lower-case))))
 
+(declare get-url)
+
+(def agents (set (repeatedly 25 #(agent {::t #'get-url :queue url-queue}))))
+
+(declare run process handle-results)

@@ -28,4 +28,5 @@ cities = {
 print cities['NY']
 print cities
 
-
+for abreviation, city in cities.items():
+	print '%s %s' % (abreviation, city)

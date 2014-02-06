@@ -22,7 +22,6 @@ if len(sys.argv) == 2 and sys.argv[1] == 'english':
 	# WORDS.append(word.strip())
 
 def convert(snippet, phrase):
-	print "snippet: %s, phrase: %s" % (snippet, phrase)
 	class_names = [w.capitalize() for w in random.sample(WORDS, snippet.count("%%%"))]
 	other_names = random.sample(WORDS, snippet.count("***"))
 	results = []

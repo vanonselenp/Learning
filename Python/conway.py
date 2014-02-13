@@ -6,6 +6,7 @@ class CellState(object):
 	Alive = 1
 
 class World(object):
+	#this needs to be refactored
 	def __init__(self, liveCells):
 		self.world = liveCells
 

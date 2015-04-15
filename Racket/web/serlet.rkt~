@@ -1,0 +1,3 @@
+#lang racket
+
+(define (t x) (+ x x))

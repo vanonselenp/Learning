@@ -10,4 +10,4 @@
 
 (serve/servlet start 
                #:port 8080
-               #:extra-files0=-paths)
+               #:servlet-path "/main")

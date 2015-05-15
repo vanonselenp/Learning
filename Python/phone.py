@@ -11,7 +11,7 @@ phone_number = {
     '9': ['w','x','y','z']
 }
 
-def name_from_number(number):
+def generate_all_possible_words(number):
     words = []
     for c in number:
         r = []
@@ -33,8 +33,28 @@ def add_character_to_word(character, words):
     return result
 
 
+def load_dictionary():
+    f = open('/usr/share/dict/words', 'r')
+    d = {}
+    for line in f:
+        d[line[:-1]] = line 
+    f.close()
+    return d
+
+
+def filter_real_worlds(words):
+    dict = load_dictionary()
+    result = []
+    for word in words:
+        if word in dict:
+            result.append(word)
+    return result
+
+
 if __name__ == '__main__':
-    phone = '234569'
-    words = name_from_number(phone)
-    print words
+    phone = '6666'
+    #phone = '3254773'
+    words = generate_all_possible_words(phone)
+    result = filter_real_worlds(words)
+    print result
 

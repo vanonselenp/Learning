@@ -3,15 +3,26 @@ import random
 # simple functions to roll random dice, because reasons
 
 def dice(amount, times):
+    results = []
     for num in range(times):
-        print random.randint(1, amount)
+        results.append(random.randint(1, amount))
+    return results
+
+def success_dice(amount, times, success_value):
+    values = dice(amount, times)
+    count = 0
+    for x in values:
+        if x > success_value:
+            count = count + 1
+    print values
+    print "Successes - %s" % count
 
 def d10(times):
-    dice(10, times)
+    success_dice(10, times, 7)
 
 def d6(times):
-    dice(6, times)
+    success_dice(6, times, 4)
 
 def d20(times):
-    dice(20, times)
+    success_dice(20, times, 15)
 

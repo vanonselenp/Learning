@@ -296,7 +296,7 @@ def display_swap_recommendations(swap_results):
 
 def apply_swap(cube_df, deck_name, remove_cards, add_cards, oracle_df):
     """
-    Simple function to execute a card swap.
+    Function to execute a card swap with color validation and automatic replacement.
     
     Args:
         cube_df: Current jumpstart cube dataframe
@@ -308,10 +308,16 @@ def apply_swap(cube_df, deck_name, remove_cards, add_cards, oracle_df):
     Returns:
         Updated cube dataframe
     """
+    from src.deck import get_deck_colour, extract_theme_from_deck_name
+    
     updated_df = cube_df.copy()
+    
+    # Get target deck colors for validation
+    target_deck_colors = get_deck_colour(deck_name)
     
     # Track which cards came from which decks for proper swapping
     cards_to_swap_back = []
+    source_deck_colors = []
     
     # Add cards first and track where they came from
     for card_name in add_cards:
@@ -320,7 +326,9 @@ def apply_swap(cube_df, deck_name, remove_cards, add_cards, oracle_df):
         if existing_mask.any():
             # Get the source deck before we change it
             source_deck = updated_df.loc[existing_mask, 'Tags'].iloc[0]
+            source_colors = get_deck_colour(source_deck)
             cards_to_swap_back.append(source_deck)
+            source_deck_colors.append(source_colors)
             
             # Move the card to target deck
             updated_df.loc[existing_mask, 'Tags'] = deck_name
@@ -344,18 +352,114 @@ def apply_swap(cube_df, deck_name, remove_cards, add_cards, oracle_df):
                 }
                 updated_df = pd.concat([updated_df, pd.DataFrame([new_row])], ignore_index=True)
             cards_to_swap_back.append(None)  # No deck to swap back to
+            source_deck_colors.append(None)
     
-    # Remove cards from target deck and place them in source decks
+    # Remove cards from target deck and place them in source decks (with color validation)
     for i, card_name in enumerate(remove_cards):
+        # Create fresh mask each time since DataFrame may have changed
         mask = (updated_df['Name'] == card_name) & (updated_df['Tags'] == deck_name)
         if mask.any():
             source_deck = cards_to_swap_back[i] if i < len(cards_to_swap_back) else None
+            source_colors = source_deck_colors[i] if i < len(source_deck_colors) else None
             
-            if source_deck:
-                # Move the removed card to the source deck
-                updated_df.loc[mask, 'Tags'] = source_deck
+            if source_deck and source_colors:
+                # Validate color compatibility before moving the card
+                oracle_card = oracle_df[oracle_df['name'] == card_name]
+                if not oracle_card.empty:
+                    card_data = oracle_card.iloc[0]
+                    if is_card_playable_in_colors(card_data, source_colors):
+                        # Move the removed card to the source deck
+                        updated_df.loc[mask, 'Tags'] = source_deck
+                    else:
+                        # Card doesn't fit color-wise in source deck, find replacement
+                        print(f"Card {card_name} not color-compatible with {source_deck}, finding replacement...")
+                        replacement_card = find_replacement_card(oracle_df, updated_df, source_deck, source_colors)
+                        
+                        if replacement_card is not None:
+                            # Add replacement card to source deck
+                            new_row = {
+                                'Name': replacement_card['name'],
+                                'Set': 'Mixed',
+                                'Collector Number': '',
+                                'Rarity': 'common',
+                                'Color Identity': replacement_card.get('Color', ''),
+                                'Type': replacement_card.get('Type', ''),
+                                'Mana Cost': '',
+                                'CMC': replacement_card.get('CMC', 0),
+                                'Power': '',
+                                'Toughness': '',
+                                'Tags': source_deck
+                            }
+                            updated_df = pd.concat([updated_df, pd.DataFrame([new_row])], ignore_index=True)
+                            print(f"Added {replacement_card['name']} to {source_deck} as replacement")
+                        else:
+                            print(f"No suitable replacement found for {source_deck}")
+                        
+                        # Remove the incompatible card (create fresh mask)
+                        fresh_mask = (updated_df['Name'] == card_name) & (updated_df['Tags'] == deck_name)
+                        updated_df = updated_df.drop(updated_df[fresh_mask].index)
+                else:
+                    # Card not found in oracle, just remove it (create fresh mask)
+                    fresh_mask = (updated_df['Name'] == card_name) & (updated_df['Tags'] == deck_name)
+                    updated_df = updated_df.drop(updated_df[fresh_mask].index)
             else:
-                # No source deck to swap to, just remove the card
-                updated_df = updated_df.drop(updated_df[mask].index)
+                # No source deck to swap to, just remove the card (create fresh mask)
+                fresh_mask = (updated_df['Name'] == card_name) & (updated_df['Tags'] == deck_name)
+                updated_df = updated_df.drop(updated_df[fresh_mask].index)
     
     return updated_df
+
+
+def find_replacement_card(oracle_df, current_cube_df, deck_name, deck_colors):
+    """
+    Find the best unassigned card to replace a card that can't be moved to a deck.
+    
+    Args:
+        oracle_df: Oracle data with all available cards
+        current_cube_df: Current state of the cube
+        deck_name: Name of the deck needing a replacement
+        deck_colors: Color identity of the deck
+    
+    Returns:
+        Best replacement card data or None if no suitable card found
+    """
+    from src.deck import extract_theme_from_deck_name
+    
+    # Get cards already in the cube
+    assigned_cards = set(current_cube_df['Name'].tolist())
+    
+    # Get expected themes for this deck
+    expected_themes = extract_theme_from_deck_name(deck_name)
+    
+    # Find unassigned cards that fit
+    candidates = []
+    
+    for _, card in oracle_df.iterrows():
+        card_name = card['name']
+        
+        # Skip if already assigned
+        if card_name in assigned_cards:
+            continue
+            
+        # Skip land cards
+        card_type = str(card.get('Type', '')).lower()
+        if 'land' in card_type:
+            continue
+            
+        # Check color compatibility
+        if not is_card_playable_in_colors(card, deck_colors):
+            continue
+            
+        # Calculate theme score
+        theme_score, _ = calculate_card_theme_score(card, expected_themes)
+        
+        # Only consider cards with some theme relevance
+        if theme_score > 0:
+            candidates.append((card, theme_score))
+    
+    # Sort by theme score and return the best one
+    if candidates:
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        return candidates[0][0]  # Return the card data
+    
+    return None

@@ -29,15 +29,15 @@ def find_best_card_swaps_for_deck(deck_name, cube_df, oracle_df, coherence_resul
     expected_themes = deck_analysis['expected_themes']
     deck_colors = deck_analysis['deck_colors']
     
-    print(f"Analyzing deck: {deck_name}")
-    print(f"Current coherence: {current_coherence:.1f}")
-    print(f"Expected themes: {', '.join(expected_themes)}")
-    print(f"Deck colors: {deck_colors}")
+    display(Markdown(f"Analyzing deck: {deck_name}"))
+    display(Markdown(f"Current coherence: {current_coherence:.1f}"))
+    display(Markdown(f"Expected themes: {', '.join(expected_themes)}"))
+    display(Markdown(f"Deck colors: {deck_colors}"))
     
     # Get potential candidate cards
     candidates = get_candidate_cards_for_swap(deck_name, cube_df, oracle_df, deck_colors, expected_themes)
     
-    print(f"Found {len(candidates)} candidate cards to consider")
+    display(Markdown(f"Found {len(candidates)} candidate cards to consider"))
     
     if len(candidates) < num_swaps:
         return {
@@ -48,7 +48,7 @@ def find_best_card_swaps_for_deck(deck_name, cube_df, oracle_df, coherence_resul
     # Find worst performing cards in current deck to consider removing
     worst_cards = find_worst_cards_in_deck(current_deck_cards, oracle_df, expected_themes, deck_colors)
     
-    print(f"Identified {len(worst_cards)} cards as potential removal candidates")
+    display(Markdown(f"Identified {len(worst_cards)} cards as potential removal candidates"))
     
     # Try different swap combinations
     best_swaps = find_optimal_swaps(
@@ -257,14 +257,11 @@ def display_swap_recommendations(swap_results):
     best_swaps = swap_results['best_swaps']
     
     display(Markdown(f"# 🔄 Swap Recommendations for {deck_name}"))
-    display(Markdown(f"**Current Coherence:** {current_coherence:.1f}/100"))
-    display(Markdown(f"**Expected Themes:** {', '.join(swap_results['expected_themes'])}"))
     
     if not best_swaps:
         display(Markdown("❌ **No beneficial swaps found.** The deck may already be well-optimized, or there may not be suitable replacement cards available."))
         return
     
-    display(Markdown("## 🎯 Recommended Changes"))
     display(Markdown(f"**Projected New Coherence:** {best_swaps['new_coherence']:.1f}/100 (+{best_swaps['improvement']:.1f})"))
     
     display(Markdown("### Cards to Remove:"))
@@ -286,5 +283,69 @@ def display_swap_recommendations(swap_results):
         
         display(Markdown(f"- **{card}** (Theme Score: {added_details['theme_score']:.1f}) - {source_text}"))
     
-    display(Markdown("---"))
-    display(Markdown("💡 **Next Steps:** Use these recommendations to manually update your cube CSV file, then re-run the coherence analysis to confirm the improvements."))
+
+def apply_swap(cube_df, deck_name, remove_cards, add_cards, oracle_df):
+    """
+    Simple function to execute a card swap.
+    
+    Args:
+        cube_df: Current jumpstart cube dataframe
+        deck_name: Name of the deck to modify
+        remove_cards: List of card names to remove from the deck
+        add_cards: List of card names to add to the deck
+        oracle_df: Oracle data for new cards
+    
+    Returns:
+        Updated cube dataframe
+    """
+    updated_df = cube_df.copy()
+    
+    # Track which cards came from which decks for proper swapping
+    cards_to_swap_back = []
+    
+    # Add cards first and track where they came from
+    for card_name in add_cards:
+        # Check if card exists in another deck (move it)
+        existing_mask = updated_df['Name'] == card_name
+        if existing_mask.any():
+            # Get the source deck before we change it
+            source_deck = updated_df.loc[existing_mask, 'Tags'].iloc[0]
+            cards_to_swap_back.append(source_deck)
+            
+            # Move the card to target deck
+            updated_df.loc[existing_mask, 'Tags'] = deck_name
+        else:
+            # Add from oracle
+            oracle_card = oracle_df[oracle_df['name'] == card_name]
+            if not oracle_card.empty:
+                # Match the exact structure of JumpstartCube CSV
+                new_row = {
+                    'Name': card_name,
+                    'Set': 'Mixed',  # Default value used in your cube
+                    'Collector Number': '',  # Empty as in your cube
+                    'Rarity': 'common',  # Default value used in your cube
+                    'Color Identity': oracle_card.iloc[0].get('Color', ''),
+                    'Type': oracle_card.iloc[0].get('Type', ''),
+                    'Mana Cost': '',  # Empty as in your cube
+                    'CMC': oracle_card.iloc[0].get('CMC', 0),
+                    'Power': '',  # Empty as in your cube
+                    'Toughness': '',  # Empty as in your cube
+                    'Tags': deck_name
+                }
+                updated_df = pd.concat([updated_df, pd.DataFrame([new_row])], ignore_index=True)
+            cards_to_swap_back.append(None)  # No deck to swap back to
+    
+    # Remove cards from target deck and place them in source decks
+    for i, card_name in enumerate(remove_cards):
+        mask = (updated_df['Name'] == card_name) & (updated_df['Tags'] == deck_name)
+        if mask.any():
+            source_deck = cards_to_swap_back[i] if i < len(cards_to_swap_back) else None
+            
+            if source_deck:
+                # Move the removed card to the source deck
+                updated_df.loc[mask, 'Tags'] = source_deck
+            else:
+                # No source deck to swap to, just remove the card
+                updated_df = updated_df.drop(updated_df[mask].index)
+    
+    return updated_df

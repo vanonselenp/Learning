@@ -7,7 +7,7 @@ from src.deck import get_deck_colour
 def display_validate_results(validation_results):
     """Display validation results in a readable format"""
     if validation_results['is_valid']:
-        display(Markdown("### Cube is validass! 🎉"))
+        display(Markdown("### Cube is valid! 🎉"))
     else:
         display(Markdown("### Cube has issues ❗"))
     

@@ -99,15 +99,22 @@ def is_card_playable_in_colors(card, deck_colors):
     
     return False
 
+def display_card_details(specific_deck, cube_df, coherence_results, oracle_df):
+    current_deck = cube_df[cube_df['Tags'] == specific_deck]
+    for card in current_deck['Name']:
+        expected_themes = coherence_results[specific_deck]['expected_themes']
+        current_card = oracle_df[oracle_df['name'] == card].iloc[0]  # Get the first row for the card
+        score, themes = calculate_card_theme_score(current_card, expected_themes)
+        print(f"Card: {card}, Score: {score}, Themes: {themes}")
 
 def calculate_card_theme_score(card, expected_themes):
     """Enhanced version of theme score calculation"""
     if not expected_themes or expected_themes == ['Unknown']:
-        return 0.0
+        return 0.0, []
     
     oracle_text = str(card.get('Oracle Text', '')).lower()
     card_type = str(card.get('Type', '')).lower()
-    card_name = str(card.get('name', '')).lower()
+    card_name = str(card.get('name', '')).lower() or str(card.get('Name', '')).lower()
     
     total_score = 0
     matching_themes = []
@@ -137,5 +144,5 @@ def calculate_card_theme_score(card, expected_themes):
                     matching_themes.append(f"{theme}(4+ power/toughness)")
             except:
                 pass
-    
+
     return total_score, matching_themes

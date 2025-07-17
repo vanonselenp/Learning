@@ -197,7 +197,7 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
             if oracle_card.empty:
                 continue
                 
-            card_score, matching_themes = calculate_card_theme_score(oracle_card, expected_themes)
+            card_score, matching_themes = calculate_card_theme_score(oracle_card.iloc[0], expected_themes)
             
             theme_matches.append({
                 'card': card_name,
@@ -209,8 +209,6 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
         avg_score = total_score / len(cards) if len(cards) > 0 else 0
         return avg_score, theme_matches
 
-    
-    
     def calculate_creature_stats_coherence(cards, expected_themes, oracle_df):
         """Analyze creature power/toughness distribution and coherence with deck themes"""
         creature_stats = {
@@ -442,9 +440,9 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
         # Overall coherence score (weighted average including creature stats)
         creature_theme_score = creature_stats['theme_alignment_score'] * 20  # Scale to 0-100
         overall_score = (
-            theme_score * 0.4 + 
-            color_coherence * 100 * 0.3 + 
-            curve_score * 100 * 0.15 + 
+            theme_score * 0.6 + 
+            color_coherence * 0.1 + 
+            curve_score * 0.15 + 
             creature_theme_score * 0.15
         )
         
@@ -457,7 +455,7 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
             'mana_curve_score': curve_score,
             'mana_curve': mana_curve,
             'creature_stats': creature_stats,
-            'overall_coherence': overall_score,
+            'overall_coherence': overall_score,  # Scale to 0-100
             'deck_colors': deck_colors,
             'card_count': len(deck_cards)
         }

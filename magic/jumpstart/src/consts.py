@@ -7,7 +7,7 @@ theme_keywords = {
     'Midrange': ['creature', 'value', 'versatile', 'balanced', 'enters', 'when', 'draw', 'search', '+1/+1', 'counter', 'sacrifice', 'dies', 'token', 'adapt', 'evolve', 'outlast', 'kicker', 'vigilance', 'trample', 'treasure', 'mana'],
     'Ramp': ['mana', 'land', 'search', 'big', 'expensive', 'cost', 'ritual', 'add', 'basic', 'battlefield', 'enters', 'when', 'sacrifice', 'dies', 'treasure', 'create', 'library', 'put', 'token', 'tap', 'channel'],
     'Tempo': ['bounce', 'counter', 'flying', 'cheap', 'efficient', 'flash', 'tap', 'return', 'untap', 'scry', 'cycling', 'ninjutsu', 'draw', 'when', 'enters', 'kicker'],
-    'Graveyard': ['graveyard', 'discard', 'mill', 'return', 'flashback', 'delve'],
+    'Graveyard': ['graveyard', 'discard', 'mill', 'milling', 'return', 'flashback', 'delve', 'unearth', 'threshold', 'delirium', 'undergrowth', 'escape', 'embalm', 'eternalize', 'reanimator', 'necromancy', 'from.*graveyard', 'to.*graveyard', 'exile.*graveyard', 'creature.*graveyard', 'zombie', 'horror', 'skeleton', 'spirit', 'dies', 'when.*enters', 'sacrifice'],
     'Sacrifice': ['sacrifice', 'dies', 'death', 'token', 'creature', 'enters'],
     'Tokens': ['token', 'create', 'populate', 'convoke', '1/1', 'creature'],
     'Equipment': ['equipment', 'attach', 'equipped', 'artifact', '+1/+1', 'power'],

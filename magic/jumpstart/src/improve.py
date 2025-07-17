@@ -87,6 +87,11 @@ def get_candidate_cards_for_swap(deck_name, cube_df, oracle_df, deck_colors, exp
         if card_name in assigned_cards:
             continue
             
+        # Skip land cards
+        card_type = str(card.get('Type', '')).lower()
+        if 'land' in card_type:
+            continue
+            
         # Check color compatibility
         if not is_card_playable_in_colors(card, deck_colors):
             continue
@@ -110,6 +115,11 @@ def get_candidate_cards_for_swap(deck_name, cube_df, oracle_df, deck_colors, exp
             continue
             
         card = oracle_card.iloc[0]
+        
+        # Skip land cards
+        card_type = str(card.get('Type', '')).lower()
+        if 'land' in card_type:
+            continue
         
         # Check color compatibility
         if not is_card_playable_in_colors(card, deck_colors):

@@ -4,9 +4,9 @@ TOTAL_CARDS = 13
 theme_keywords = { 
     'Aggro': ['haste', 'attack', 'damage', 'creature', 'power', 'quick', 'rush', 'fast'],
     'Control': ['counter', 'destroy', 'exile', 'draw', 'instant', 'sorcery', 'tap', 'return'],
-    'Midrange': ['creature', 'value', 'versatile', 'balanced', 'enters the battlefield'],
+    'Midrange': ['creature', 'value', 'versatile', 'balanced', 'enters', 'when', 'draw', 'search', '+1/+1', 'counter', 'sacrifice', 'dies', 'token', 'adapt', 'evolve', 'outlast', 'kicker', 'vigilance', 'trample', 'treasure', 'mana'],
     'Ramp': ['mana', 'land', 'search', 'big', 'expensive', 'cost', 'ritual'],
-    'Tempo': ['bounce', 'counter', 'flying', 'cheap', 'efficient', 'flash'],
+    'Tempo': ['bounce', 'counter', 'flying', 'cheap', 'efficient', 'flash', 'tap', 'return', 'untap', 'scry', 'cycling', 'ninjutsu', 'draw', 'when', 'enters', 'kicker'],
     'Graveyard': ['graveyard', 'discard', 'mill', 'return', 'flashback', 'delve'],
     'Sacrifice': ['sacrifice', 'dies', 'death', 'token', 'creature', 'enters'],
     'Tokens': ['token', 'create', 'populate', 'convoke', '1/1', 'creature'],

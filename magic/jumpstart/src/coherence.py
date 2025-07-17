@@ -1,7 +1,177 @@
-
-
 import pandas as pd
-from src.deck import calculate_card_theme_score, extract_theme_from_deck_name, get_deck_colour
+from src.deck import calculate_card_theme_score, extract_theme_from_deck_name, get_deck_colour, is_card_playable_in_colors
+from src.consts import theme_keywords
+from IPython.display import Markdown, display
+
+
+def display_coherence_analysis_enhanced(coherence_results, top_n=5):
+    """Display enhanced coherence analysis results including creature stats"""
+    
+    # Sort decks by overall coherence score
+    sorted_decks = sorted(coherence_results.items(), 
+                         key=lambda x: x[1]['overall_coherence'], 
+                         reverse=True)
+    
+    display(Markdown("# Enhanced Deck Theme Coherence Analysis"))
+    
+    # Overall summary
+    avg_coherence = sum(r['overall_coherence'] for r in coherence_results.values()) / len(coherence_results)
+    display(Markdown(f"**Average Coherence Score: {avg_coherence:.1f}/100**"))
+    
+    # Top performing decks
+    display(Markdown(f"## Top {top_n} Most Coherent Decks"))
+    for i, (deck_name, analysis) in enumerate(sorted_decks[:top_n]):
+        display(Markdown(f"### {i+1}. {deck_name}"))
+        display(Markdown(f"- **Overall Score: {analysis['overall_coherence']:.1f}/100**"))
+        display(Markdown(f"- **Expected Themes:** {', '.join(analysis['expected_themes'])}"))
+        display(Markdown(f"- **Theme Match Score:** {analysis['theme_score']:.1f}"))
+        display(Markdown(f"- **Color Coherence:** {analysis['color_coherence']:.1%}"))
+        display(Markdown(f"- **Mana Curve Score:** {analysis['mana_curve_score']:.1%}"))
+        
+        # Creature stats
+        creature_stats = analysis['creature_stats']
+        display(Markdown(f"- **Creature Count:** {creature_stats['creature_count']} ({creature_stats['creature_count']/analysis['card_count']:.1%} of deck)"))
+        if creature_stats['creature_count'] > 0:
+            display(Markdown(f"- **Avg Power/Toughness:** {creature_stats['avg_power']:.1f}/{creature_stats['avg_toughness']:.1f}"))
+            display(Markdown(f"- **Creature Mix:** Small: {creature_stats['creature_categories']['small']}, Medium: {creature_stats['creature_categories']['medium']}, Large: {creature_stats['creature_categories']['large']}"))
+            display(Markdown(f"- **Creature Theme Alignment:** {creature_stats['theme_alignment_score']:.1f}"))
+        
+        if analysis['color_issues']:
+            display(Markdown(f"- **Color Issues:** {len(analysis['color_issues'])} cards"))
+    
+    # Bottom performing decks
+    display(Markdown(f"## Bottom {top_n} Least Coherent Decks"))
+    for i, (deck_name, analysis) in enumerate(sorted_decks[-top_n:]):
+        display(Markdown(f"### {len(sorted_decks)-top_n+i+1}. {deck_name}"))
+        display(Markdown(f"- **Overall Score: {analysis['overall_coherence']:.1f}/100**"))
+        display(Markdown(f"- **Expected Themes:** {', '.join(analysis['expected_themes'])}"))
+        display(Markdown(f"- **Theme Match Score:** {analysis['theme_score']:.1f}"))
+        display(Markdown(f"- **Color Coherence:** {analysis['color_coherence']:.1%}"))
+        
+        # Creature stats
+        creature_stats = analysis['creature_stats']
+        if creature_stats['creature_count'] > 0:
+            display(Markdown(f"- **Avg Power/Toughness:** {creature_stats['avg_power']:.1f}/{creature_stats['avg_toughness']:.1f}"))
+            display(Markdown(f"- **Creature Theme Alignment:** {creature_stats['theme_alignment_score']:.1f}"))
+        
+        if analysis['color_issues']:
+            display(Markdown(f"- **Color Issues:** {analysis['color_issues'][:3]}"))
+
+
+def analyze_specific_deck_enhanced(deck_name, cube_df, oracle_df, coherence_results):
+    """Enhanced deck analysis including creature statistics"""
+    
+    if deck_name not in coherence_results:
+        print(f"Deck '{deck_name}' not found!")
+        return
+    
+    deck_data = coherence_results[deck_name]
+    deck_cards = cube_df[cube_df['Tags'] == deck_name]
+    creature_stats = deck_data['creature_stats']
+    
+    display(Markdown(f"# Enhanced Analysis: {deck_name}"))
+    display(Markdown(f"**Overall Coherence Score: {deck_data['overall_coherence']:.1f}/100**"))
+    
+    # Theme analysis
+    display(Markdown("## Theme Analysis"))
+    display(Markdown(f"**Expected Themes:** {', '.join(deck_data['expected_themes'])}"))
+    display(Markdown(f"**Theme Match Score:** {deck_data['theme_score']:.1f}"))
+    
+    # Creature Statistics
+    display(Markdown("## Creature Statistics"))
+    display(Markdown(f"**Total Creatures:** {creature_stats['creature_count']} ({creature_stats['creature_count']/deck_data['card_count']:.1%} of deck)"))
+    
+    if creature_stats['creature_count'] > 0:
+        display(Markdown(f"**Average Power/Toughness:** {creature_stats['avg_power']:.1f}/{creature_stats['avg_toughness']:.1f}"))
+        display(Markdown(f"**Total Power/Toughness:** {creature_stats['total_power']:.0f}/{creature_stats['total_toughness']:.0f}"))
+        display(Markdown(f"**Creature Theme Alignment Score:** {creature_stats['theme_alignment_score']:.1f}"))
+        
+        # Creature categories
+        display(Markdown("### Creature Categories:"))
+        display(Markdown(f"- **Small (≤2 power):** {creature_stats['creature_categories']['small']} creatures"))
+        display(Markdown(f"- **Medium (3-4 power):** {creature_stats['creature_categories']['medium']} creatures"))
+        display(Markdown(f"- **Large (≥5 power):** {creature_stats['creature_categories']['large']} creatures"))
+        display(Markdown(f"- **Evasive abilities:** {creature_stats['creature_categories']['evasive']} creatures"))
+        display(Markdown(f"- **Utility abilities:** {creature_stats['creature_categories']['utility']} creatures"))
+        
+        # Power distribution
+        if creature_stats['power_distribution']:
+            power_dist = ", ".join([f"{k}: {v}" for k, v in sorted(creature_stats['power_distribution'].items())])
+            display(Markdown(f"**Power Distribution:** {power_dist}"))
+        
+        # Show individual creatures
+        if creature_stats['creature_details']:
+            display(Markdown("### Creature Details:"))
+            for creature in creature_stats['creature_details'][:10]:  # Show first 10
+                categories_str = ", ".join(creature['categories']) if creature['categories'] else "basic"
+                display(Markdown(f"- **{creature['name']}** ({creature['power']:.0f}/{creature['toughness']:.0f}) - {categories_str}"))
+    
+    # Color coherence
+    display(Markdown("## Color Analysis"))
+    display(Markdown(f"**Deck Colors:** {deck_data['deck_colors']}"))
+    display(Markdown(f"**Color Coherence:** {deck_data['color_coherence']:.1%}"))
+    
+    if deck_data['color_issues']:
+        display(Markdown("### Color Issues:"))
+        for issue in deck_data['color_issues'][:5]:
+            display(Markdown(f"- {issue}"))
+    
+    # Mana curve
+    display(Markdown("## Mana Curve Analysis"))
+    display(Markdown(f"**Mana Curve Score:** {deck_data['mana_curve_score']:.1%}"))
+    
+    curve_display = []
+    for cmc in sorted(deck_data['mana_curve'].keys()):
+        count = deck_data['mana_curve'][cmc]
+        curve_display.append(f"CMC {cmc}: {count} cards")
+    
+    display(Markdown("**Curve Distribution:**"))
+    for item in curve_display:
+        display(Markdown(f"- {item}"))
+    
+    # Enhanced recommendations including creature analysis
+    display(Markdown("## Improvement Recommendations"))
+    
+    recommendations = []
+    
+    if deck_data['theme_score'] < 2.0:
+        recommendations.append("🎯 **Theme Focus**: Consider adding more cards that directly support the deck's themes")
+    
+    if deck_data['color_coherence'] < 0.9:
+        recommendations.append("🎨 **Color Issues**: Some cards don't fit the color identity - consider replacements")
+    
+    if deck_data['mana_curve_score'] < 0.8:
+        recommendations.append("⚡ **Mana Curve**: Consider adjusting the mana curve for better balance")
+    
+    # Creature-specific recommendations
+    if creature_stats['creature_count'] > 0:
+        if creature_stats['theme_alignment_score'] < 1.0:
+            recommendations.append("👹 **Creature Synergy**: Creature stats don't align well with deck themes")
+        
+        expected_themes = deck_data['expected_themes']
+        if 'Aggro' in expected_themes and creature_stats['creature_categories']['large'] > creature_stats['creature_categories']['small']:
+            recommendations.append("⚡ **Aggro Focus**: Consider more small, efficient creatures for aggro strategy")
+        
+        if 'Big Creatures' in expected_themes and creature_stats['avg_power'] < 4:
+            recommendations.append("💪 **Big Creatures**: Average creature power is low for a big creatures theme")
+        
+        if 'Flying' in expected_themes and creature_stats['creature_categories']['evasive'] < creature_stats['creature_count'] * 0.5:
+            recommendations.append("🕊️ **Flying Theme**: Consider more creatures with flying or evasion")
+    
+    # Check for missing card types
+    creature_count = creature_stats['creature_count']
+    spell_count = len(deck_cards) - creature_count
+    
+    if creature_count < 4:
+        recommendations.append("👹 **Creatures**: Consider adding more creatures for board presence")
+    elif creature_count > 10:
+        recommendations.append("📜 **Spells**: Consider adding more non-creature spells for versatility")
+    
+    if not recommendations:
+        recommendations.append("✅ **Excellent Balance**: Deck shows great coherence across all metrics including creature synergy!")
+    
+    for rec in recommendations:
+        display(Markdown(f"- {rec}"))
 
 
 def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
@@ -27,7 +197,7 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
             if oracle_card.empty:
                 continue
                 
-            card_score, matching_themes = calculate_card_theme_score(expected_themes, card_type, oracle_card)
+            card_score, matching_themes = calculate_card_theme_score(oracle_card, expected_themes)
             
             theme_matches.append({
                 'card': card_name,

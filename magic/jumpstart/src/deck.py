@@ -99,41 +99,43 @@ def is_card_playable_in_colors(card, deck_colors):
     
     return False
 
-def calculate_card_theme_score(expected_themes, card_type, oracle_card):
-        oracle_text = str(oracle_card.iloc[0]['Oracle Text']).lower()
-        card_score = 0
-        matching_themes = []
+
+def calculate_card_theme_score(card, expected_themes):
+    """Enhanced version of theme score calculation"""
+    if not expected_themes or expected_themes == ['Unknown']:
+        return 0.0
+    
+    oracle_text = str(card.get('Oracle Text', '')).lower()
+    card_type = str(card.get('Type', '')).lower()
+    card_name = str(card.get('name', '')).lower()
+    
+    total_score = 0
+    matching_themes = []
+    
+    for theme in expected_themes:
+        if theme in theme_keywords:
+            theme_words = theme_keywords[theme]
+            # Count matches in oracle text, type, and name
+            matches = sum(1 for word in theme_words if word in oracle_text or word in card_type or word in card_name)
+            total_score += matches
+            matching_themes.append(theme)
+        
+        # Special handling for Big Creatures theme
+        if theme == "Big Creatures" and 'creature' in card_type:
+            power = card.get('Power', 0)
+            toughness = card.get('Toughness', 0)
             
-            # Check against each expected theme
-        for theme in expected_themes:
-            if theme in theme_keywords:
-                theme_words = theme_keywords[theme]
-                matches = sum(1 for word in theme_words if word in oracle_text or word in card_type)
-                if matches > 0:
-                    card_score += matches
-                    matching_themes.append(f"{theme}({matches})")
-            if theme == "Big Creatures" and oracle_card.iloc[0]['Type'].startswith('Creature'):
-                oracle_row = oracle_card.iloc[0]
-                power = oracle_row.get('Power', 0)
-                toughness = oracle_row.get('Toughness', 0)
-                oracle_text = str(oracle_row['Oracle Text']).lower()
-                    
-                    # Handle NaN values
-                if pd.isna(power):
-                    power = 0
-                if pd.isna(toughness):
-                    toughness = 0
-                    
-                try:
-                    power = float(power)
-                except (ValueError, TypeError):
-                    power = 0.0
-                    
-                try:
-                    toughness = float(toughness)
-                except (ValueError, TypeError):
-                    toughness = 0.0
-                if int(power) >= 5 or int(toughness) >= 5:
-                    card_score += 1
+            try:
+                power = float(power) if not pd.isna(power) else 0
+                toughness = float(toughness) if not pd.isna(toughness) else 0
+                
+                if power >= 5 or toughness >= 5:
+                    total_score += 2  # Bonus for big creatures
                     matching_themes.append(f"{theme}(5+ power/toughness)")
-        return card_score,matching_themes
+                elif power >= 4 or toughness >= 4:
+                    total_score += 1  # Smaller bonus for medium creatures
+                    matching_themes.append(f"{theme}(4+ power/toughness)")
+            except:
+                pass
+    
+    return total_score, matching_themes

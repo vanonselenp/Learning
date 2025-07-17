@@ -1,6 +1,30 @@
+from IPython.display import Markdown, display
 import pandas as pd
 from src.consts import TOTAL_CARDS
 from src.deck import get_deck_colour
+
+
+def display_validate_results(validation_results):
+    """Display validation results in a readable format"""
+    if validation_results['is_valid']:
+        display(Markdown("### Cube is validass! 🎉"))
+    else:
+        display(Markdown("### Cube has issues ❗"))
+    
+    if validation_results['errors']:
+        display(Markdown("#### Errors:"))
+        for error in validation_results['errors']:
+            display(Markdown(f"- {error}"))
+    
+    if validation_results['warnings']:
+        display(Markdown("#### Warnings:"))
+        for warning in validation_results['warnings']:
+            display(Markdown(f"- {warning}"))
+    
+    if validation_results['deck_summaries']:
+        display(Markdown("#### Deck Summaries:"))
+        for deck_name, summary in validation_results['deck_summaries'].items():
+            display(Markdown(f"**{deck_name}** {summary['total_cards']} cards"))
 
 
 def validate_jumpstart_cube(cube_df, oracle_df):
@@ -129,3 +153,4 @@ def validate_jumpstart_cube(cube_df, oracle_df):
     
 
     return validation_results
+

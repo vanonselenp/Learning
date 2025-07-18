@@ -1,6 +1,6 @@
 import pandas as pd
 from src.deck import calculate_card_theme_score, extract_theme_from_deck_name, get_deck_colour, is_card_playable_in_colors
-from src.consts import theme_keywords
+from src.consts import theme_keywords, theme_criteria
 from IPython.display import Markdown, display
 
 
@@ -210,7 +210,7 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
         return avg_score, theme_matches
 
     def calculate_creature_stats_coherence(cards, expected_themes, oracle_df):
-        """Analyze creature power/toughness distribution and coherence with deck themes"""
+        """Improved creature analysis with theme-specific evaluation criteria"""
         creature_stats = {
             'creature_count': 0,
             'total_power': 0,
@@ -230,7 +230,11 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
             'creature_details': []
         }
         
+        if not expected_themes or expected_themes == ['Unknown']:
+            return creature_stats
+        
         creatures = []
+        total_alignment_score = 0.0
         
         for _, card_row in cards.iterrows():
             card_name = card_row['Name']
@@ -258,12 +262,9 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
             
             try:
                 power = float(power)
-            except (ValueError, TypeError):
-                power = 0.0
-            
-            try:
                 toughness = float(toughness)
             except (ValueError, TypeError):
+                power = 0.0
                 toughness = 0.0
             
             creature_stats['creature_count'] += 1
@@ -297,7 +298,7 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
                 category.append('large')
             
             # Check for utility/evasive abilities
-            if any(word in oracle_text for word in ['flying', 'unblockable', 'menace', 'trample']):
+            if any(word in oracle_text for word in ['flying', 'unblockable', 'menace', 'trample', 'shadow']):
                 creature_stats['creature_categories']['evasive'] += 1
                 category.append('evasive')
             
@@ -315,37 +316,67 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
             }
             creature_stats['creature_details'].append(creature_details)
             creatures.append(creature_details)
+            
+            # Calculate improved theme alignment for this creature
+            creature_score = 0.0
+            
+            # Evaluate against each expected theme
+            for theme in expected_themes:
+                if theme not in theme_criteria:
+                    continue
+                    
+                criteria = theme_criteria[theme]
+                theme_score = 0.0
+                
+                # Base keyword matching
+                keyword_matches = sum(1 for keyword in criteria['keywords'] 
+                                    if keyword in oracle_text or keyword in card_name.lower())
+                theme_score += keyword_matches
+                
+                # Ability keyword matching
+                ability_matches = sum(1 for ability in criteria['abilities']
+                                    if ability in oracle_text)
+                theme_score += ability_matches * 0.5
+                
+                # Stats evaluation (if stats matter for this theme)
+                if criteria.get('stats_matter', False):
+                    power_threshold = criteria.get('power_threshold', 0)
+                    if power >= power_threshold:
+                        if 'size_bonus_multiplier' in criteria:
+                            theme_score += power * criteria['size_bonus_multiplier']
+                        else:
+                            theme_score += 1.0
+                
+                # Utility creature bonus
+                if any(word in oracle_text for word in ['enters', 'when', 'dies', 'draw', 'search', 'create']):
+                    theme_score += criteria.get('utility_bonus', 0)
+                
+                # Evasion bonus
+                if any(word in oracle_text for word in ['flying', 'unblockable', 'menace', 'trample', 'shadow']):
+                    theme_score += criteria.get('evasion_bonus', 0)
+                
+                # Theme-specific bonuses
+                if theme == 'Flying' and 'flying' in oracle_text:
+                    theme_score += 2.0  # Extra bonus for actually having flying
+                elif theme == 'Tokens' and any(word in oracle_text for word in ['token', 'create']):
+                    theme_score += criteria.get('token_maker_bonus', 0)
+                elif theme in ['Artifacts', 'Red Artifacts'] and 'artifact' in card_type:
+                    theme_score += criteria.get('artifact_bonus', 0)
+                elif theme == 'Sacrifice':
+                    if 'sacrifice' in oracle_text and 'creature' in oracle_text:
+                        theme_score += criteria.get('sacrifice_outlet_bonus', 0)
+                    if 'dies' in oracle_text:
+                        theme_score += criteria.get('death_trigger_bonus', 0)
+                
+                creature_score = max(creature_score, theme_score)
+            
+            total_alignment_score += creature_score
         
         # Calculate averages
         if creature_stats['creature_count'] > 0:
             creature_stats['avg_power'] = creature_stats['total_power'] / creature_stats['creature_count']
             creature_stats['avg_toughness'] = creature_stats['total_toughness'] / creature_stats['creature_count']
-        
-        # Calculate theme alignment for creatures
-        theme_alignment_score = 0
-        if expected_themes and expected_themes != ['Unknown']:
-            for theme in expected_themes:
-                if theme == 'Aggro' or theme == 'Beatdown':
-                    # Aggro wants low-cost, efficient creatures
-                    theme_alignment_score += creature_stats['creature_categories']['small'] * 0.8
-                    theme_alignment_score += creature_stats['creature_categories']['evasive'] * 0.9
-                elif theme == 'Big Creatures' or theme == 'Stompy':
-                    # Big creature themes want high power
-                    theme_alignment_score += creature_stats['creature_categories']['large'] * 1.0
-                    theme_alignment_score += creature_stats['avg_power'] * 0.2
-                elif theme == 'Control':
-                    # Control wants utility creatures
-                    theme_alignment_score += creature_stats['creature_categories']['utility'] * 0.9
-                elif theme == 'Flying':
-                    # Flying theme wants evasive creatures
-                    flying_count = sum(1 for c in creatures if 'flying' in str(oracle_df[oracle_df['name'] == c['name']].iloc[0]['Oracle Text']).lower())
-                    theme_alignment_score += flying_count * 1.0
-                elif theme == 'Tokens':
-                    # Token themes often want smaller, efficient creatures
-                    theme_alignment_score += creature_stats['creature_categories']['small'] * 0.7
-                    theme_alignment_score += creature_stats['creature_categories']['utility'] * 0.8
-        
-        creature_stats['theme_alignment_score'] = theme_alignment_score / max(creature_stats['creature_count'], 1)
+            creature_stats['theme_alignment_score'] = total_alignment_score / creature_stats['creature_count']
         
         return creature_stats
     
@@ -437,13 +468,13 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
         curve_score, mana_curve = calculate_mana_curve_coherence(deck_cards)
         creature_stats = calculate_creature_stats_coherence(deck_cards, expected_themes, oracle_df)
         
-        # Overall coherence score (weighted average including creature stats)
-        creature_theme_score = creature_stats['theme_alignment_score'] * 20  # Scale to 0-100
+        # Overall coherence score with improved weighting
+        creature_theme_score = min(creature_stats['theme_alignment_score'] * 10, 50)  # Scale and cap at 50
         overall_score = (
-            theme_score * 0.6 + 
-            color_coherence * 0.1 + 
-            curve_score * 0.15 + 
-            creature_theme_score * 0.15
+            theme_score * 0.5 +           # Reduced from 0.6 - main theme matching
+            color_coherence * 0.1 +       # Color coherence (unchanged)
+            curve_score * 0.2 +           # Increased from 0.15 - mana curve importance
+            creature_theme_score * 0.2    # Increased from 0.15 - creature synergy
         )
         
         results[deck_name] = {

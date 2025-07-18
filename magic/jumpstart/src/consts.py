@@ -31,6 +31,101 @@ color_synergies = {
     'G': ['mana', 'ramp', 'trample', 'elf', 'beast', 'large']
 }
 
+# Comprehensive theme criteria for creature evaluation
+theme_criteria = {
+    'Graveyard': {
+        'keywords': ['graveyard', 'mill', 'delve', 'unearth', 'flashback', 'dredge', 'threshold', 
+                    'dies', 'sacrifice', 'discard', 'return', 'zombie', 'horror', 'skeleton',
+                    'persist', 'undergrowth', 'delirium', 'escape', 'embalm', 'eternalize'],
+        'abilities': ['enters', 'when', 'whenever', 'triggered abilities'],
+        'stats_matter': False,  # Power/toughness is less important than abilities
+        'utility_bonus': 2.0,   # High bonus for utility creatures
+        'evasion_bonus': 0.5    # Small bonus for evasion
+    },
+    'Aggro': {
+        'keywords': ['haste', 'first strike', 'double strike', 'menace', 'trample'],
+        'abilities': ['power', 'attack'],
+        'stats_matter': True,   # Power matters a lot
+        'utility_bonus': 0.5,   # Small bonus for utility
+        'evasion_bonus': 1.5,   # High bonus for evasion
+        'power_threshold': 2    # Want creatures with 2+ power
+    },
+    'Beatdown': {
+        'keywords': ['haste', 'first strike', 'double strike', 'menace', 'trample'],
+        'abilities': ['power', 'attack'],
+        'stats_matter': True,   # Power matters a lot
+        'utility_bonus': 0.5,   # Small bonus for utility
+        'evasion_bonus': 1.5,   # High bonus for evasion
+        'power_threshold': 2    # Want creatures with 2+ power
+    },
+    'Control': {
+        'keywords': ['flash', 'flying', 'vigilance', 'counter', 'destroy', 'exile', 'tap', 'untap'],
+        'abilities': ['enters', 'when', 'draw', 'search', 'bounce', 'removal'],
+        'stats_matter': False,  # Stats less important than utility
+        'utility_bonus': 2.0,   # High value on utility
+        'evasion_bonus': 1.0    # Moderate evasion value
+    },
+    'Flying': {
+        'keywords': ['flying', 'fly'],
+        'abilities': ['air', 'wing'],
+        'stats_matter': True,   # Both stats and flying matter
+        'utility_bonus': 1.0,
+        'evasion_bonus': 3.0,   # Flying is the main theme
+        'required_ability': 'flying'  # Must have flying for high score
+    },
+    'Big Creatures': {
+        'keywords': ['trample', 'vigilance'],
+        'abilities': ['power', 'toughness'],
+        'stats_matter': True,   # Power/toughness is primary
+        'utility_bonus': 0.5,
+        'evasion_bonus': 1.0,
+        'power_threshold': 4,   # Want 4+ power creatures
+        'size_bonus_multiplier': 0.2  # Bonus scales with size
+    },
+    'Stompy': {
+        'keywords': ['trample', 'vigilance'],
+        'abilities': ['power', 'toughness'],
+        'stats_matter': True,   # Power/toughness is primary
+        'utility_bonus': 0.5,
+        'evasion_bonus': 1.0,
+        'power_threshold': 4,   # Want 4+ power creatures
+        'size_bonus_multiplier': 0.2  # Bonus scales with size
+    },
+    'Tokens': {
+        'keywords': ['token', 'create', 'populate', 'convoke'],
+        'abilities': ['enters', 'when', 'dies', 'sacrifice'],
+        'stats_matter': False,  # Utility over stats
+        'utility_bonus': 2.0,
+        'evasion_bonus': 1.0,
+        'token_maker_bonus': 3.0  # High value for token generators
+    },
+    'Artifacts': {
+        'keywords': ['artifact', 'equipment', 'construct', 'servo'],
+        'abilities': ['enters', 'when', 'sacrifice'],
+        'stats_matter': False,
+        'utility_bonus': 1.5,
+        'evasion_bonus': 1.0,
+        'artifact_bonus': 2.0  # Bonus for being an artifact creature
+    },
+    'Red Artifacts': {
+        'keywords': ['artifact', 'equipment', 'construct', 'servo'],
+        'abilities': ['enters', 'when', 'sacrifice'],
+        'stats_matter': False,
+        'utility_bonus': 1.5,
+        'evasion_bonus': 1.0,
+        'artifact_bonus': 2.0  # Bonus for being an artifact creature
+    },
+    'Sacrifice': {
+        'keywords': ['sacrifice', 'dies', 'death', 'token'],
+        'abilities': ['enters', 'when', 'create', 'dies'],
+        'stats_matter': False,
+        'utility_bonus': 2.0,
+        'evasion_bonus': 0.5,
+        'sacrifice_outlet_bonus': 2.5,  # High value for sac outlets
+        'death_trigger_bonus': 2.0      # High value for death triggers
+    }
+}
+
 # Also check for guild names and convert to strategies
 guild_themes = {
     'azorius': ['Control', 'Flying'],

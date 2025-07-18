@@ -164,7 +164,7 @@ Faceless Butcher,4,Creature - Nightmare Horror,B,Black,"When this creature enter
 Falkenrath Noble,4,Creature - Vampire,B,Black,"Flying | Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life.",HOU/XLN/IMA Update;evasion;graveyard matters,63275.0,2,2
 Gravedigger,4,Creature - Zombie,B,Black,"When this creature enters, you may return target creature card from your graveyard to your hand.",Since the beginning;ETB;graveyard matters,60557.0,2,2
 Scurrilous Sentry,4,Creature - Human Knight Rogue,B,Black,"Menace | Whenever this creature enters or attacks, it connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on this creature.)",,126233.0,2,3
-Thorn of the Black Rose,4,Creature - Human Assassin,B,Black,,CN2/KLD/C16 Update;ETB;card draw;deathtouch,,,
+Thorn of the Black Rose,4,Creature - Human Assassin,B,Black,"Deathtouch. When this creature enters, you become the monarch.",CN2/KLD/C16 Update;ETB;card draw;deathtouch,,,
 Gray Merchant of Asphodel,5,Creature - Zombie,B,Black,"When this creature enters, each opponent loses X life, where X is your devotion to black. You gain life equal to the life lost this way. (Each {B} in the mana costs of permanents you control counts toward your devotion to black.)",,55089.0,2,4
 Loathsome Curator,5,Creature - Gorgon Wizard,B,Black,"Exploit (When this creature enters, you may sacrifice a creature.) | Menace | When this creature exploits a creature, destroy target creature you don't control with mana value 3 or less.",AFR/MH2 Update,90555.0,5,4
 Okiba-Gang Shinobi,5,Creature - Rat Ninja,B,Black,,,,,

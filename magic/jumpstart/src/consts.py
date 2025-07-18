@@ -122,6 +122,15 @@ theme_criteria = {
         'evasion_bonus': 0.5,
         'sacrifice_outlet_bonus': 2.5,  # High value for sac outlets
         'death_trigger_bonus': 2.0      # High value for death triggers
+    },
+    'Equipment': {
+        'keywords': theme_keywords['Equipment'],
+        'abilities': ['enters', 'when', 'attach', 'equipped', 'living weapon'],
+        'stats_matter': True,   # Equipment wants creatures that can use the gear effectively
+        'utility_bonus': 1.0,   # Moderate utility value
+        'evasion_bonus': 1.5,   # Equipment often grants evasion
+        'power_threshold': 1,   # Even small creatures can be good with equipment
+        'equipment_synergy_bonus': 2.0  # High bonus for creatures that synergize with equipment
     }
 }
 

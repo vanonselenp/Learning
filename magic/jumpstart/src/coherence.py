@@ -367,6 +367,13 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
                         theme_score += criteria.get('sacrifice_outlet_bonus', 0)
                     if 'dies' in oracle_text:
                         theme_score += criteria.get('death_trigger_bonus', 0)
+                elif theme == 'Equipment':
+                    # Bonus for creatures that directly synergize with equipment
+                    if any(word in oracle_text for word in ['equipment', 'attach', 'equipped', 'living weapon']):
+                        theme_score += criteria.get('equipment_synergy_bonus', 0)
+                    # Bonus for creatures that create equipment or tokens to equip
+                    if any(word in oracle_text for word in ['create', 'token']) and 'equipment' in oracle_text:
+                        theme_score += criteria.get('equipment_synergy_bonus', 0)
                 
                 creature_score = max(creature_score, theme_score)
             

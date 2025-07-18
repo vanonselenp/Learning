@@ -87,11 +87,42 @@ def is_card_playable_in_colors(card, deck_colors):
     card_color = card.get('Color', '')
     card_category = card.get('Color Category', '')
     
-    # Colorless cards and artifacts can be played anywhere
-    if card_category in ['Colorless', 'Artifacts', 'Lands'] or pd.isna(card_color):
+    # Handle truly colorless cards (artifacts, lands, etc.)
+    if card_category in ['Colorless', 'Artifacts', 'Lands']:
         return True
     
-    # Check if card colors fit deck colors
+    # Handle devoid cards - they are colorless but should respect their color category
+    if pd.isna(card_color):
+        # For devoid cards, use color category to determine color identity
+        if card_category == 'Green':
+            effective_color = 'G'
+        elif card_category == 'Blue':
+            effective_color = 'U'
+        elif card_category == 'Black':
+            effective_color = 'B'
+        elif card_category == 'Red':
+            effective_color = 'R'
+        elif card_category == 'White':
+            effective_color = 'W'
+        elif card_category == 'Multicolored':
+            # For multicolored devoid cards, we need to be more careful
+            # For now, allow them in multicolored decks only
+            if isinstance(deck_colors, str):
+                return len(deck_colors) > 1  # Multi-character means multicolored
+            elif isinstance(deck_colors, list):
+                return len(deck_colors) > 1  # Multiple colors in list
+            return False
+        else:
+            # Truly colorless cards (no color category match)
+            return True
+        
+        # Check if the effective color matches deck colors
+        if isinstance(deck_colors, str):
+            return effective_color in deck_colors
+        elif isinstance(deck_colors, list):
+            return effective_color in deck_colors
+    
+    # Check if card colors fit deck colors (normal colored cards)
     if isinstance(card_color, str) and isinstance(deck_colors, str):
         card_color_set = set(card_color)
         deck_color_set = set(deck_colors)

@@ -32,18 +32,17 @@ color_synergies = {
 }
 
 # Comprehensive theme criteria for creature evaluation
+# Note: 'keywords' field references theme_keywords to avoid duplication
 theme_criteria = {
     'Graveyard': {
-        'keywords': ['graveyard', 'mill', 'delve', 'unearth', 'flashback', 'dredge', 'threshold', 
-                    'dies', 'sacrifice', 'discard', 'return', 'zombie', 'horror', 'skeleton',
-                    'persist', 'undergrowth', 'delirium', 'escape', 'embalm', 'eternalize'],
+        'keywords': theme_keywords['Graveyard'],
         'abilities': ['enters', 'when', 'whenever', 'triggered abilities'],
         'stats_matter': False,  # Power/toughness is less important than abilities
         'utility_bonus': 2.0,   # High bonus for utility creatures
         'evasion_bonus': 0.5    # Small bonus for evasion
     },
     'Aggro': {
-        'keywords': ['haste', 'first strike', 'double strike', 'menace', 'trample'],
+        'keywords': theme_keywords['Aggro'],
         'abilities': ['power', 'attack'],
         'stats_matter': True,   # Power matters a lot
         'utility_bonus': 0.5,   # Small bonus for utility
@@ -51,7 +50,7 @@ theme_criteria = {
         'power_threshold': 2    # Want creatures with 2+ power
     },
     'Beatdown': {
-        'keywords': ['haste', 'first strike', 'double strike', 'menace', 'trample'],
+        'keywords': theme_keywords['Beatdown'],
         'abilities': ['power', 'attack'],
         'stats_matter': True,   # Power matters a lot
         'utility_bonus': 0.5,   # Small bonus for utility
@@ -59,14 +58,14 @@ theme_criteria = {
         'power_threshold': 2    # Want creatures with 2+ power
     },
     'Control': {
-        'keywords': ['flash', 'flying', 'vigilance', 'counter', 'destroy', 'exile', 'tap', 'untap'],
+        'keywords': theme_keywords['Control'],
         'abilities': ['enters', 'when', 'draw', 'search', 'bounce', 'removal'],
         'stats_matter': False,  # Stats less important than utility
         'utility_bonus': 2.0,   # High value on utility
         'evasion_bonus': 1.0    # Moderate evasion value
     },
     'Flying': {
-        'keywords': ['flying', 'fly'],
+        'keywords': theme_keywords['Flying'],
         'abilities': ['air', 'wing'],
         'stats_matter': True,   # Both stats and flying matter
         'utility_bonus': 1.0,
@@ -74,7 +73,7 @@ theme_criteria = {
         'required_ability': 'flying'  # Must have flying for high score
     },
     'Big Creatures': {
-        'keywords': ['trample', 'vigilance'],
+        'keywords': theme_keywords['Big Creatures'],
         'abilities': ['power', 'toughness'],
         'stats_matter': True,   # Power/toughness is primary
         'utility_bonus': 0.5,
@@ -83,7 +82,7 @@ theme_criteria = {
         'size_bonus_multiplier': 0.2  # Bonus scales with size
     },
     'Stompy': {
-        'keywords': ['trample', 'vigilance'],
+        'keywords': theme_keywords['Stompy'],
         'abilities': ['power', 'toughness'],
         'stats_matter': True,   # Power/toughness is primary
         'utility_bonus': 0.5,
@@ -92,7 +91,7 @@ theme_criteria = {
         'size_bonus_multiplier': 0.2  # Bonus scales with size
     },
     'Tokens': {
-        'keywords': ['token', 'create', 'populate', 'convoke'],
+        'keywords': theme_keywords['Tokens'],
         'abilities': ['enters', 'when', 'dies', 'sacrifice'],
         'stats_matter': False,  # Utility over stats
         'utility_bonus': 2.0,
@@ -100,7 +99,7 @@ theme_criteria = {
         'token_maker_bonus': 3.0  # High value for token generators
     },
     'Artifacts': {
-        'keywords': ['artifact', 'equipment', 'construct', 'servo'],
+        'keywords': theme_keywords['Artifacts'],
         'abilities': ['enters', 'when', 'sacrifice'],
         'stats_matter': False,
         'utility_bonus': 1.5,
@@ -108,7 +107,7 @@ theme_criteria = {
         'artifact_bonus': 2.0  # Bonus for being an artifact creature
     },
     'Red Artifacts': {
-        'keywords': ['artifact', 'equipment', 'construct', 'servo'],
+        'keywords': theme_keywords['Red Artifacts'],
         'abilities': ['enters', 'when', 'sacrifice'],
         'stats_matter': False,
         'utility_bonus': 1.5,
@@ -116,7 +115,7 @@ theme_criteria = {
         'artifact_bonus': 2.0  # Bonus for being an artifact creature
     },
     'Sacrifice': {
-        'keywords': ['sacrifice', 'dies', 'death', 'token'],
+        'keywords': theme_keywords['Sacrifice'],
         'abilities': ['enters', 'when', 'create', 'dies'],
         'stats_matter': False,
         'utility_bonus': 2.0,

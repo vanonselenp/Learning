@@ -131,6 +131,17 @@ theme_criteria = {
         'evasion_bonus': 1.5,   # Equipment often grants evasion
         'power_threshold': 1,   # Even small creatures can be good with equipment
         'equipment_synergy_bonus': 2.0  # High bonus for creatures that synergize with equipment
+    },
+    'Small Creatures': {
+        'keywords': theme_keywords['Small Creatures'],
+        'abilities': ['haste', 'menace', 'first strike', 'double strike', 'dash'],
+        'stats_matter': True,   # Efficient stats matter for aggro
+        'power_threshold': 1,   # Want creatures with 1+ power
+        'max_power': 3,         # Cap for 'small' creatures
+        'utility_bonus': 1.0,   # Moderate utility value
+        'evasion_bonus': 2.0,   # High value on evasion for aggro
+        'haste_bonus': 2.5,     # Haste is crucial for small aggro
+        'efficient_stats_bonus': 1.5  # Bonus for power >= CMC
     }
 }
 

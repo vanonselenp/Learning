@@ -374,6 +374,22 @@ def analyze_deck_theme_coherence_enhanced(cube_df, oracle_df):
                     # Bonus for creatures that create equipment or tokens to equip
                     if any(word in oracle_text for word in ['create', 'token']) and 'equipment' in oracle_text:
                         theme_score += criteria.get('equipment_synergy_bonus', 0)
+                elif theme == 'Small Creatures':
+                    # Check if creature fits "small" criteria (power <= max_power)
+                    max_power = criteria.get('max_power', 3)
+                    if power <= max_power:
+                        # Bonus for haste (key for small aggro creatures)
+                        if 'haste' in oracle_text:
+                            theme_score += criteria.get('haste_bonus', 0)
+                        # Bonus for efficient stats (power >= CMC)
+                        try:
+                            card_cmc = card_row.get('CMC', 1)
+                            if pd.isna(card_cmc):
+                                card_cmc = 1
+                            if power >= float(card_cmc):
+                                theme_score += criteria.get('efficient_stats_bonus', 0)
+                        except (ValueError, TypeError):
+                            pass
                 
                 creature_score = max(creature_score, theme_score)
             
